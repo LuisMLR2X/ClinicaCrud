@@ -28,6 +28,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.compose.foundation)
     //Para trabajar con la libreria ROOM
     val room_version = "2.8.4"
     implementation("androidx.room:room-runtime:$room_version")
@@ -52,4 +53,6 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
+
 }

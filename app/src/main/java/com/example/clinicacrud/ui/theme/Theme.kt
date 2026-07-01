@@ -9,35 +9,44 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+private val LightColors = lightColorScheme(
+    primary = md_primary,
+    primaryContainer = md_primaryContainer,
+    onPrimaryContainer = md_onPrimaryContainer,
+    secondary = md_secondary,
+    background = md_background,
+    surface = md_surface,
+    surfaceVariant = md_surfaceVariant,
+    onSurface = md_onSurface,
+    onSurfaceVariant = md_onSurfaceVariant,
+    outline = md_outline,
+    error = md_danger
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+private val DarkColors = darkColorScheme(
+    primary = md_primaryDark,
+    primaryContainer = md_primaryContainerDark,
+    onPrimaryContainer = md_onPrimaryContainerDark,
+    secondary = md_secondaryDark,
+    background = md_backgroundDark,
+    surface = md_surfaceDark,
+    surfaceVariant = md_surfaceVariantDark,
+    onSurface = md_onSurfaceDark,
+    onSurfaceVariant = md_onSurfaceVariantDark,
+    outline = md_outlineDark,
+    error = md_dangerDark
 )
 
 @Composable
 fun ClinicaCrudTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -45,9 +54,18 @@ fun ClinicaCrudTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
+        darkTheme -> DarkColors
+        else -> LightColors
+    }
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            // Hace que la barra de estado superior combine elegantemente con el fondo de la app
+            window.statusBarColor = colorScheme.background.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+        }
     }
 
     MaterialTheme(

@@ -1,15 +1,24 @@
-// MainActivity.kt
 package com.example.clinicacrud
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.MedicalServices
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -64,7 +73,10 @@ class MainActivity : ComponentActivity() {
         )
 
         setContent {
-            ClinicaCrudTheme { AppNavegacion(especialidadVM, doctorVM, pacienteVM, citaVM) }
+            var isDarkTheme by remember { mutableStateOf(false) }
+            ClinicaCrudTheme(darkTheme = isDarkTheme) {
+                AppNavegacion(especialidadVM, doctorVM, pacienteVM, citaVM, isDarkTheme) { isDarkTheme = !isDarkTheme }
+            }
         }
     }
 }
@@ -74,33 +86,85 @@ fun AppNavegacion(
     especialidadVM: EspecialidadViewModel,
     doctorVM: DoctorViewModel,
     pacienteVM: PacienteViewModel,
-    citaVM: CitaViewModel
+    citaVM: CitaViewModel,
+    isDarkTheme: Boolean,
+    onToggleTheme: () -> Unit
 ) {
     val nav = rememberNavController()
     NavHost(nav, startDestination = "home") {
-        composable("home") { HomeScreen(nav) }
-        composable("especialidades") { EspecialidadScreen(especialidadVM, nav) }
-
-        composable("doctores") { DoctorScreen(doctorVM, especialidadVM.especialidades, nav) }
-        composable("pacientes") { PacienteScreen(pacienteVM, nav) }
-        composable("citas") { CitaScreen(citaVM, doctorVM.doctores, pacienteVM.pacientes, nav) }
+        composable("home") { HomeScreen(nav, isDarkTheme, onToggleTheme) }
+        composable("especialidades") { EspecialidadScreen(especialidadVM, nav, isDarkTheme, onToggleTheme) }
+        composable("doctores") { DoctorScreen(doctorVM, especialidadVM.especialidades, nav, isDarkTheme, onToggleTheme) }
+        composable("pacientes") { PacienteScreen(pacienteVM, nav, isDarkTheme, onToggleTheme) }
+        composable("citas") { CitaScreen(citaVM, doctorVM.doctores, pacienteVM.pacientes, nav, isDarkTheme, onToggleTheme) }
     }
 }
 
 @Composable
-fun HomeScreen(nav: NavController) {
-    Column(Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+fun HomeScreen(nav: NavController, isDarkTheme: Boolean, onToggleTheme: () -> Unit) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background) // Fondo sólido corregido
     ) {
-        Text("CLÍNICA - MENU PRINCIPAL", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(16.dp))
-        Button(onClick = { nav.navigate("especialidades") }) { Text("Especialidades") }
-        Spacer(Modifier.height(8.dp))
-        Button(onClick = { nav.navigate("doctores") }) { Text("Doctores") }
-        Spacer(Modifier.height(8.dp))
-        Button(onClick = { nav.navigate("pacientes") }) { Text("Pacientes") }
-        Spacer(Modifier.height(8.dp))
-        Button(onClick = { nav.navigate("citas") }) { Text("Citas Médicas") }
+        Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.End) {
+            IconButton(onClick = onToggleTheme) {
+                Icon(
+                    if (isDarkTheme) Icons.Filled.LightMode else Icons.Filled.DarkMode,
+                    contentDescription = "Cambiar tema",
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+            }
+        }
+        Column(
+            Modifier.fillMaxSize().padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                Icons.Filled.LocalHospital,
+                null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(56.dp)
+            )
+            Spacer(Modifier.height(12.dp))
+            Text(
+                "Clínica",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground // Contraste automático
+            )
+            Text(
+                "Panel principal",
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant // Texto secundario corregido
+            )
+            Spacer(Modifier.height(28.dp))
+
+            HomeMenuButton("Especialidades", Icons.Filled.MedicalServices) { nav.navigate("especialidades") }
+            Spacer(Modifier.height(12.dp))
+            HomeMenuButton("Doctores", Icons.Filled.People) { nav.navigate("doctores") }
+            Spacer(Modifier.height(12.dp))
+            HomeMenuButton("Pacientes", Icons.Filled.People) { nav.navigate("pacientes") }
+            Spacer(Modifier.height(12.dp))
+            HomeMenuButton("Citas Médicas", Icons.Filled.CalendarMonth) { nav.navigate("citas") }
+        }
+    }
+}
+
+@Composable
+private fun HomeMenuButton(text: String, icon: ImageVector, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(0.85f).height(52.dp),
+        shape = RoundedCornerShape(14.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
+        )
+    ) {
+        Icon(icon, null, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(10.dp))
+        Text(text, fontSize = 16.sp, fontWeight = FontWeight.Medium)
     }
 }
