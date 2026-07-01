@@ -1,10 +1,10 @@
-// presentation/cita/CitaViewModel.kt
 package com.example.clinicacrud.presentation.cita
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.example.clinicacrud.domain.model.Cita
+import com.example.clinicacrud.domain.model.Paciente
 import com.example.clinicacrud.domain.usecase.cita.*
 
 class CitaViewModel(
@@ -17,10 +17,22 @@ class CitaViewModel(
         private set
     var filtroPaciente by mutableStateOf("")
 
+    // Estado para guardar el paciente que se encontró en la búsqueda por DNI
+    var busquedaPaciente by mutableStateOf<Paciente?>(null)
+        private set
+
     val citasFiltradas get() = if (filtroPaciente.isBlank()) citas
     else citas.filter { it.pacienteId.toString() == filtroPaciente.trim() }
 
     private fun actualizar() { citas = getCitasUseCase() }
+
+    fun buscarPorDni(dni: String, listaPacientes: List<Paciente>) {
+        busquedaPaciente = listaPacientes.find { it.dni == dni }
+    }
+
+    fun limpiarBusqueda() {
+        busquedaPaciente = null
+    }
 
     fun agregar(c: Cita) {
         if (c.doctorCodigo.isBlank() || c.fecha.isBlank()) return

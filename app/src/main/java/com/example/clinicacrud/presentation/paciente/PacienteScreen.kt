@@ -25,7 +25,7 @@ fun PacienteScreen(viewModel: PacienteViewModel, nav: NavController, isDarkTheme
     var nombres by rememberSaveable { mutableStateOf("") }
     var apellidos by rememberSaveable { mutableStateOf("") }
     var telefono by rememberSaveable { mutableStateOf("") }
-    var idMod by rememberSaveable { mutableStateOf("") }
+    var dniBusquedaMod by rememberSaveable { mutableStateOf("") }
     var dniMod by rememberSaveable { mutableStateOf("") }
     var nombresMod by rememberSaveable { mutableStateOf("") }
     var apellidosMod by rememberSaveable { mutableStateOf("") }
@@ -39,15 +39,19 @@ fun PacienteScreen(viewModel: PacienteViewModel, nav: NavController, isDarkTheme
             LazyColumn(Modifier.fillMaxSize().padding(16.dp)) {
                 item {
                     SectionCard("Buscar", Icons.Filled.Search, MaterialTheme.colorScheme.primary) {
-                        OutlinedTextField(dniBusqueda, { dniBusqueda = it }, Modifier.fillMaxWidth(), label = { Text("DNI") })
+                        OutlinedTextField(dniBusqueda, { dniBusqueda = it }, Modifier.fillMaxWidth(), label = { Text("DNI") }, placeholder = { Text("Ej: 12345678") })
                         Spacer(Modifier.height(12.dp))
                         Button({ viewModel.buscar(dniBusqueda.trim()) }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) { Text("BUSCAR") }
-                        viewModel.busqueda?.let {
+                        viewModel.busqueda?.let { busqueda ->
                             Spacer(Modifier.height(12.dp))
                             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer), shape = RoundedCornerShape(10.dp)) {
-                                Column(Modifier.padding(12.dp)) {
-                                    Text("${it.dni} · ${it.nombres} ${it.apellidos}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                                    Text("Tel: ${it.telefono}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                Column(Modifier.fillMaxWidth().padding(14.dp)) {
+                                    Text("Resultado de Búsqueda", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                    Spacer(Modifier.height(4.dp))
+                                    Text("${busqueda.nombres} ${busqueda.apellidos}", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                    Text("DNI: ${busqueda.dni}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                    Text("Teléfono: ${busqueda.telefono}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                    Text("ID Interno: ${busqueda.id}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
                                 }
                             }
                             Spacer(Modifier.height(8.dp))
@@ -71,9 +75,9 @@ fun PacienteScreen(viewModel: PacienteViewModel, nav: NavController, isDarkTheme
                     }
                     Spacer(Modifier.height(16.dp))
                     SectionCard("Modificar", Icons.Filled.Edit, MaterialTheme.colorScheme.primary) {
-                        OutlinedTextField(idMod, { idMod = it }, Modifier.fillMaxWidth(), label = { Text("⚠ ID a modificar") })
+                        OutlinedTextField(dniBusquedaMod, { dniBusquedaMod = it }, Modifier.fillMaxWidth(), label = { Text("⚠ DNI a modificar") }, placeholder = { Text("Ej: 12345678") })
                         Spacer(Modifier.height(8.dp))
-                        OutlinedTextField(dniMod, { dniMod = it }, Modifier.fillMaxWidth(), label = { Text("Nuevo DNI") })
+                        OutlinedTextField( dniMod, { dniMod = it }, Modifier.fillMaxWidth(), label = { Text("Nuevo DNI") })
                         Spacer(Modifier.height(8.dp))
                         OutlinedTextField(nombresMod, { nombresMod = it }, Modifier.fillMaxWidth(), label = { Text("Nuevos nombres") })
                         Spacer(Modifier.height(8.dp))
@@ -82,8 +86,11 @@ fun PacienteScreen(viewModel: PacienteViewModel, nav: NavController, isDarkTheme
                         OutlinedTextField(telefonoMod, { telefonoMod = it }, Modifier.fillMaxWidth(), label = { Text("Nuevo teléfono") })
                         Spacer(Modifier.height(12.dp))
                         Button({
-                            viewModel.modificar(idMod.toLongOrNull() ?: 0, Paciente(dni = dniMod.trim(), nombres = nombresMod.trim(), apellidos = apellidosMod.trim(), telefono = telefonoMod.trim()))
-                            idMod = ""; dniMod = ""; nombresMod = ""; apellidosMod = ""; telefonoMod = ""
+                            val pacienteAEditar = viewModel.pacientes.find { it.dni == dniBusquedaMod.trim() }
+                            if (pacienteAEditar != null) {
+                                viewModel.modificar(pacienteAEditar.id, Paciente(dni = dniMod.trim(), nombres = nombresMod.trim(), apellidos = apellidosMod.trim(), telefono = telefonoMod.trim()))
+                                dniBusquedaMod = ""; dniMod = ""; nombresMod = ""; apellidosMod = ""; telefonoMod = ""
+                            }
                         }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) { Text("MODIFICAR") }
                     }
                     Spacer(Modifier.height(20.dp))
@@ -95,8 +102,10 @@ fun PacienteScreen(viewModel: PacienteViewModel, nav: NavController, isDarkTheme
                     Card(Modifier.fillMaxWidth().padding(vertical = 4.dp), shape = RoundedCornerShape(12.dp), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                         Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
-                                Text("${p.dni} · ${p.nombres} ${p.apellidos}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                                Text("Tel: ${p.telefono}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("${p.nombres} ${p.apellidos}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                Text("DNI: ${p.dni}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Teléfono: ${p.telefono}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("ID Interno: ${p.id}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
                             }
                             IconButton({ viewModel.eliminar(p) }) { Icon(Icons.Filled.Delete, "Eliminar", tint = MaterialTheme.colorScheme.error) }
                         }

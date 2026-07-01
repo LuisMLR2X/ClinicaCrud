@@ -22,7 +22,7 @@ import androidx.navigation.NavController
 fun EspecialidadScreen(viewModel: EspecialidadViewModel, nav: NavController, isDarkTheme: Boolean, onToggleTheme: () -> Unit) {
     var nombre by rememberSaveable { mutableStateOf("") }
     var descripcion by rememberSaveable { mutableStateOf("") }
-    var idMod by rememberSaveable { mutableStateOf("") }
+    var nombreBusquedaMod by rememberSaveable { mutableStateOf("") }
     var nombreMod by rememberSaveable { mutableStateOf("") }
     var descripcionMod by rememberSaveable { mutableStateOf("") }
 
@@ -33,7 +33,7 @@ fun EspecialidadScreen(viewModel: EspecialidadViewModel, nav: NavController, isD
             LazyColumn(Modifier.fillMaxSize().padding(16.dp)) {
                 item {
                     SectionCard("Registrar", Icons.Filled.Add, MaterialTheme.colorScheme.primary) {
-                        OutlinedTextField(nombre, { nombre = it }, Modifier.fillMaxWidth(), label = { Text("Nombre") })
+                        OutlinedTextField(nombre, { nombre = it }, Modifier.fillMaxWidth(), label = { Text("Nombre") }, placeholder = { Text("Ej: Pediatría") })
                         Spacer(Modifier.height(8.dp))
                         OutlinedTextField(descripcion, { descripcion = it }, Modifier.fillMaxWidth(), label = { Text("Descripción") })
                         Spacer(Modifier.height(12.dp))
@@ -41,15 +41,18 @@ fun EspecialidadScreen(viewModel: EspecialidadViewModel, nav: NavController, isD
                     }
                     Spacer(Modifier.height(16.dp))
                     SectionCard("Modificar", Icons.Filled.Edit, MaterialTheme.colorScheme.secondary) {
-                        OutlinedTextField(idMod, { idMod = it }, Modifier.fillMaxWidth(), label = { Text("⚠ ID a modificar") }, isError = idMod.isNotBlank() && idMod.toLongOrNull() == null)
+                        OutlinedTextField(nombreBusquedaMod, { nombreBusquedaMod = it }, Modifier.fillMaxWidth(), label = { Text("⚠ Nombre de especialidad a modificar") }, placeholder = { Text("Ej: Pediatría") })
                         Spacer(Modifier.height(8.dp))
                         OutlinedTextField(nombreMod, { nombreMod = it }, Modifier.fillMaxWidth(), label = { Text("Nuevo nombre") })
                         Spacer(Modifier.height(8.dp))
                         OutlinedTextField(descripcionMod, { descripcionMod = it }, Modifier.fillMaxWidth(), label = { Text("Nueva descripción") })
                         Spacer(Modifier.height(12.dp))
                         Button({
-                            viewModel.modificar(idMod.toLongOrNull() ?: 0, nombreMod.trim(), descripcionMod.trim())
-                            idMod = ""; nombreMod = ""; descripcionMod = ""
+                            val especialidadAEditar = viewModel.especialidades.find { it.nombre.equals(nombreBusquedaMod.trim(), ignoreCase = true) }
+                            if (especialidadAEditar != null) {
+                                viewModel.modificar(especialidadAEditar.id, nombreMod.trim(), descripcionMod.trim())
+                                nombreBusquedaMod = ""; nombreMod = ""; descripcionMod = ""
+                            }
                         }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)) { Text("MODIFICAR") }
                     }
                     Spacer(Modifier.height(20.dp))
@@ -61,8 +64,9 @@ fun EspecialidadScreen(viewModel: EspecialidadViewModel, nav: NavController, isD
                     Card(Modifier.fillMaxWidth().padding(vertical = 4.dp), shape = RoundedCornerShape(12.dp), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                         Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
-                                Text("ID ${e.id} · ${e.nombre}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                                Text(e.descripcion, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                                Text(e.nombre, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                Text("Descripción: ${e.descripcion}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                                Text("ID Interno: ${e.id}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
                             }
                             IconButton({ viewModel.eliminar(e) }) { Icon(Icons.Filled.Delete, "Eliminar", tint = MaterialTheme.colorScheme.error) }
                         }

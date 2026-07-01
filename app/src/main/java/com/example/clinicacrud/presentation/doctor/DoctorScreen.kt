@@ -38,6 +38,9 @@ fun DoctorScreen(viewModel: DoctorViewModel, especialidades: List<Especialidad>,
 
     var codigoBusqueda by rememberSaveable { mutableStateOf("") }
 
+    // Variable agregada para controlar el mensaje de error
+    var errorRegistrar by rememberSaveable { mutableStateOf("") }
+
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize()) {
             TopBar("Doctores", nav, isDarkTheme, onToggleTheme)
@@ -45,15 +48,20 @@ fun DoctorScreen(viewModel: DoctorViewModel, especialidades: List<Especialidad>,
             LazyColumn(Modifier.fillMaxSize().padding(16.dp)) {
                 item {
                     SectionCard("Buscar", Icons.Filled.Search, MaterialTheme.colorScheme.primary) {
-                        OutlinedTextField(codigoBusqueda, { codigoBusqueda = it }, Modifier.fillMaxWidth(), label = { Text("Código") })
+                        OutlinedTextField(codigoBusqueda, { codigoBusqueda = it }, Modifier.fillMaxWidth(), label = { Text("Código") }, placeholder = { Text("Ej: CMP - 123456") })
                         Spacer(Modifier.height(12.dp))
                         Button({ viewModel.buscar(codigoBusqueda.trim()) }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) { Text("BUSCAR") }
-                        viewModel.busqueda?.let {
+                        viewModel.busqueda?.let { busqueda ->
+                            val nombreEspecialidad = especialidades.find { it.id == busqueda.especialidadId }?.nombre ?: "No asignada"
                             Spacer(Modifier.height(12.dp))
                             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer), shape = RoundedCornerShape(10.dp)) {
-                                Column(Modifier.padding(12.dp)) {
-                                    Text("${it.codigo} · ${it.nombres} ${it.apellidos}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                                    Text("${it.sexo} · Especialidad ID: ${it.especialidadId}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                Column(Modifier.fillMaxWidth().padding(14.dp)) {
+                                    Text("Resultado de Búsqueda", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                    Spacer(Modifier.height(4.dp))
+                                    Text("Dr(a). ${busqueda.nombres} ${busqueda.apellidos}", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                    Text("Código: ${busqueda.codigo}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                    Text("Especialidad: $nombreEspecialidad", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                    Text("Sexo: ${busqueda.sexo}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
                                 }
                             }
                             Spacer(Modifier.height(8.dp))
@@ -62,7 +70,13 @@ fun DoctorScreen(viewModel: DoctorViewModel, especialidades: List<Especialidad>,
                     }
                     Spacer(Modifier.height(16.dp))
                     SectionCard("Registrar", Icons.Filled.Add, MaterialTheme.colorScheme.secondary) {
-                        OutlinedTextField(codigo, { codigo = it }, Modifier.fillMaxWidth(), label = { Text("Código único") })
+                        OutlinedTextField(
+                            value = codigo,
+                            onValueChange = { codigo = it; errorRegistrar = "" },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text("Código único") },
+                            placeholder = { Text("Ej: CMP - 123456") }
+                        )
                         Spacer(Modifier.height(8.dp))
                         OutlinedTextField(nombres, { nombres = it }, Modifier.fillMaxWidth(), label = { Text("Nombres") })
                         Spacer(Modifier.height(8.dp))
@@ -78,15 +92,40 @@ fun DoctorScreen(viewModel: DoctorViewModel, especialidades: List<Especialidad>,
                         Spacer(Modifier.height(10.dp))
                         Text("Especialidad", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         especialidades.forEach { e -> Row(verticalAlignment = Alignment.CenterVertically) { RadioButton(especialidad == e.id, { especialidad = e.id }); Text(e.nombre, color = MaterialTheme.colorScheme.onSurface) } }
+
+                        if (errorRegistrar.isNotBlank()) {
+                            Spacer(Modifier.height(8.dp))
+                            Text(errorRegistrar, color = MaterialTheme.colorScheme.error, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        }
+
                         Spacer(Modifier.height(12.dp))
                         Button({
-                            viewModel.agregar(Doctor(codigo.trim(), nombres.trim(), apellidos.trim(), sexo, fechaNac.trim(), especialidad))
-                            codigo = ""; nombres = ""; apellidos = ""; fechaNac = ""
+                            val codigoLimpio = codigo.trim()
+                            val codigoExiste = viewModel.doctores.any { it.codigo == codigoLimpio }
+                            val regexFormato = Regex("^CMP - \\d{6}\$")
+
+                            if (codigoLimpio.isBlank()) {
+                                errorRegistrar = "El código no puede estar vacío"
+                            } else if (!codigoLimpio.matches(regexFormato)) {
+                                errorRegistrar = "Formato inválido. Debe ser CMP - seguido de 6 números"
+                            } else if (codigoExiste) {
+                                errorRegistrar = "El código '$codigoLimpio' ya está registrado"
+                            } else {
+                                viewModel.agregar(Doctor(codigoLimpio, nombres.trim(), apellidos.trim(), sexo, fechaNac.trim(), especialidad))
+                                codigo = ""; nombres = ""; apellidos = ""; fechaNac = ""
+                                errorRegistrar = ""
+                            }
                         }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)) { Text("REGISTRAR") }
                     }
                     Spacer(Modifier.height(16.dp))
                     SectionCard("Modificar", Icons.Filled.Edit, MaterialTheme.colorScheme.primary) {
-                        OutlinedTextField(codigoMod, { codigoMod = it }, Modifier.fillMaxWidth(), label = { Text("⚠ Código a modificar") })
+                        OutlinedTextField(
+                            value = codigoMod,
+                            onValueChange = { codigoMod = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text("⚠ Código a modificar") },
+                            placeholder = { Text("Ej: CMP - 123456") }
+                        )
                         Spacer(Modifier.height(8.dp))
                         OutlinedTextField(nombresMod, { nombresMod = it }, Modifier.fillMaxWidth(), label = { Text("Nuevos nombres") })
                         Spacer(Modifier.height(8.dp))
@@ -114,11 +153,14 @@ fun DoctorScreen(viewModel: DoctorViewModel, especialidades: List<Especialidad>,
                 }
 
                 items(viewModel.doctores) { d ->
+                    val nombreEspecialidad = especialidades.find { it.id == d.especialidadId }?.nombre ?: "No asignada"
                     Card(Modifier.fillMaxWidth().padding(vertical = 4.dp), shape = RoundedCornerShape(12.dp), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                         Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
-                                Text("${d.codigo} · ${d.nombres} ${d.apellidos}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                                Text("${d.sexo} · Especialidad ID: ${d.especialidadId}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Dr(a). ${d.nombres} ${d.apellidos}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                Text("Código: ${d.codigo}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Especialidad: $nombreEspecialidad", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Sexo: ${d.sexo}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
                             }
                             IconButton({ viewModel.eliminar(d) }) { Icon(Icons.Filled.Delete, "Eliminar", tint = MaterialTheme.colorScheme.error) }
                         }

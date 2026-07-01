@@ -38,6 +38,7 @@ fun CitaScreen(viewModel: CitaViewModel, doctores: List<Doctor>, pacientes: List
     var estadoMod by rememberSaveable { mutableStateOf(ESTADOS[0]) }
     var diagnosticoMod by rememberSaveable { mutableStateOf("") }
     var costoMod by rememberSaveable { mutableStateOf("") }
+    var dniBusqueda by rememberSaveable { mutableStateOf("") }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize()) {
@@ -45,8 +46,23 @@ fun CitaScreen(viewModel: CitaViewModel, doctores: List<Doctor>, pacientes: List
 
             LazyColumn(Modifier.fillMaxSize().padding(16.dp)) {
                 item {
-                    SectionCard("Buscar por paciente (ID)", Icons.Filled.Search, MaterialTheme.colorScheme.primary) {
-                        OutlinedTextField(viewModel.filtroPaciente, { viewModel.filtroPaciente = it }, Modifier.fillMaxWidth(), label = { Text("ID Paciente") })
+                    SectionCard("Buscar por paciente (DNI)", Icons.Filled.Search, MaterialTheme.colorScheme.primary) {
+                        OutlinedTextField(dniBusqueda, { dniBusqueda = it }, Modifier.fillMaxWidth(), label = { Text("DNI Paciente") })
+                        Spacer(Modifier.height(12.dp))
+                        Button({ viewModel.buscarPorDni(dniBusqueda.trim(), pacientes) }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) { Text("BUSCAR") }
+                        viewModel.busquedaPaciente?.let {
+                            Spacer(Modifier.height(12.dp))
+                            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer), shape = RoundedCornerShape(10.dp)) {
+                                Column(Modifier.padding(12.dp)) {
+                                    Text("Paciente: ${it.nombres} ${it.apellidos}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                    Text("DNI: ${it.dni} · ID Interno: ${it.id}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                    Spacer(Modifier.height(4.dp))
+                                    Text("Usa el ID Interno (${it.id}) abajo si deseas filtrar el listado.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
+                                }
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            OutlinedButton({ viewModel.limpiarBusqueda(); dniBusqueda = "" }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) { Text("CERRAR") }
+                        }
                     }
                     Spacer(Modifier.height(16.dp))
                     SectionCard("Registrar", Icons.Filled.Add, MaterialTheme.colorScheme.secondary) {
@@ -100,14 +116,51 @@ fun CitaScreen(viewModel: CitaViewModel, doctores: List<Doctor>, pacientes: List
                 }
 
                 items(viewModel.citasFiltradas) { c ->
-                    Card(Modifier.fillMaxWidth().padding(vertical = 4.dp), shape = RoundedCornerShape(12.dp), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-                        Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text("ID ${c.id} · Dr(a). ${c.doctorCodigo} · Pac. ${c.pacienteId}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                                Text("${c.fecha} ${c.hora} · ${c.estado} · S/ ${c.costo}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text("Motivo: ${c.motivoConsulta} · Dx: ${c.diagnostico}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    val pacienteAsociado = pacientes.find { it.id == c.pacienteId }
+                    val doctorAsociado = doctores.find { it.codigo == c.doctorCodigo }
+
+                    val pacienteTexto = if (pacienteAsociado != null) "${pacienteAsociado.nombres} ${pacienteAsociado.apellidos} (DNI: ${pacienteAsociado.dni})" else "ID: ${c.pacienteId}"
+                    val doctorNombre = if (doctorAsociado != null) "${doctorAsociado.nombres} ${doctorAsociado.apellidos}" else "No asignado"
+                    val doctorEspecialidad = if (doctorAsociado != null) "Especialidad ID: ${doctorAsociado.especialidadId}" else "Sin especialidad"
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    ) {
+                        Column(Modifier.padding(16.dp)) {
+                            // Cabecera: ID Cita, Estado e Icono de Eliminar
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f)) {
+                                    Text("Cita N.° ${c.id}", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                    Text("Estado: ${c.estado}", fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
+                                }
+                                IconButton({ viewModel.eliminar(c) }) { Icon(Icons.Filled.Delete, "Eliminar", tint = MaterialTheme.colorScheme.error) }
                             }
-                            IconButton({ viewModel.eliminar(c) }) { Icon(Icons.Filled.Delete, "Eliminar", tint = MaterialTheme.colorScheme.error) }
+
+                            HorizontalDivider(Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
+
+                            // BLOQUE DEL DOCTOR ORGANIZADO
+                            Text("DOCTOR", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            Text("Nombre: Dr. $doctorNombre", fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                            Text("Código: ${c.doctorCodigo}  ·  $doctorEspecialidad", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                            Spacer(Modifier.height(10.dp))
+
+                            // RESTO DE INFORMACIÓN
+                            Text("PACIENTE", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                            Text(pacienteTexto, fontSize = 14.sp)
+
+                            Spacer(Modifier.height(10.dp))
+
+                            Text("DETALLES DE CITA", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Fecha y Hora: ${c.fecha} - ${c.hora}", fontSize = 13.sp)
+                            Text("Motivo: ${c.motivoConsulta}", fontSize = 13.sp)
+                            Text("Costo: S/ ${c.costo}", fontSize = 13.sp)
+                            if (c.diagnostico.isNotBlank()) {
+                                Text("Diagnóstico: ${c.diagnostico}", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            }
                         }
                     }
                 }
