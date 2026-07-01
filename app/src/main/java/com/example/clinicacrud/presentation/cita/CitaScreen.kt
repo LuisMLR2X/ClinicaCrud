@@ -47,17 +47,42 @@ fun CitaScreen(viewModel: CitaViewModel, doctores: List<Doctor>, pacientes: List
             LazyColumn(Modifier.fillMaxSize().padding(16.dp)) {
                 item {
                     SectionCard("Buscar por paciente (DNI)", Icons.Filled.Search, MaterialTheme.colorScheme.primary) {
-                        OutlinedTextField(dniBusqueda, { dniBusqueda = it }, Modifier.fillMaxWidth(), label = { Text("DNI Paciente") })
+                        OutlinedTextField(dniBusqueda, { dniBusqueda = it }, Modifier.fillMaxWidth(), label = { Text("DNI Paciente") }, placeholder = { Text("Ej: 12345678") })
                         Spacer(Modifier.height(12.dp))
-                        Button({ viewModel.buscarPorDni(dniBusqueda.trim(), pacientes) }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) { Text("BUSCAR") }
-                        viewModel.busquedaPaciente?.let {
+                        Button({ viewModel.buscarPorDni(dniBusqueda.trim(), pacientes) }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) { Text("BUSCAR CITAS") }
+
+                        viewModel.busquedaPaciente?.let { pacienteEncontrado ->
                             Spacer(Modifier.height(12.dp))
                             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer), shape = RoundedCornerShape(10.dp)) {
-                                Column(Modifier.padding(12.dp)) {
-                                    Text("Paciente: ${it.nombres} ${it.apellidos}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                                    Text("DNI: ${it.dni} · ID Interno: ${it.id}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                Column(Modifier.fillMaxWidth().padding(14.dp)) {
+                                    Text("Historial de Citas", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                                     Spacer(Modifier.height(4.dp))
-                                    Text("Usa el ID Interno (${it.id}) abajo si deseas filtrar el listado.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
+                                    Text("${pacienteEncontrado.nombres} ${pacienteEncontrado.apellidos}", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                    Text("DNI: ${pacienteEncontrado.dni}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
+
+                                    HorizontalDivider(Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f))
+
+                                    // Filtrar citas correspondientes a este paciente específico
+                                    val citasDelPaciente = viewModel.citasFiltradas.filter { it.pacienteId == pacienteEncontrado.id }
+
+                                    if (citasDelPaciente.isEmpty()) {
+                                        Text("No se encontraron citas registradas para este paciente.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                    } else {
+                                        citasDelPaciente.forEach { cita ->
+                                            val doc = doctores.find { it.codigo == cita.doctorCodigo }
+                                            val docNombre = if (doc != null) "${doc.nombres} ${doc.apellidos}" else cita.doctorCodigo
+
+                                            Column(Modifier.padding(vertical = 4.dp)) {
+                                                Text("• Cita N.° ${cita.id} [${cita.estado}]", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                                Text("  Dr. $docNombre", fontSize = 12.sp, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f))
+                                                Text("  Fecha: ${cita.fecha} - ${cita.hora} | Motivo: ${cita.motivoConsulta}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
+                                                if (cita.diagnostico.isNotBlank()) {
+                                                    Text("  Diag: ${cita.diagnostico}", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                                }
+                                            }
+                                            Spacer(Modifier.height(4.dp))
+                                        }
+                                    }
                                 }
                             }
                             Spacer(Modifier.height(8.dp))
@@ -130,7 +155,6 @@ fun CitaScreen(viewModel: CitaViewModel, doctores: List<Doctor>, pacientes: List
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                     ) {
                         Column(Modifier.padding(16.dp)) {
-                            // Cabecera: ID Cita, Estado e Icono de Eliminar
                             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                 Column(Modifier.weight(1f)) {
                                     Text("Cita N.° ${c.id}", fontWeight = FontWeight.Bold, fontSize = 16.sp)
@@ -141,14 +165,12 @@ fun CitaScreen(viewModel: CitaViewModel, doctores: List<Doctor>, pacientes: List
 
                             HorizontalDivider(Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
 
-                            // BLOQUE DEL DOCTOR ORGANIZADO
                             Text("DOCTOR", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                             Text("Nombre: Dr. $doctorNombre", fontWeight = FontWeight.Medium, fontSize = 14.sp)
                             Text("Código: ${c.doctorCodigo}  ·  $doctorEspecialidad", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
                             Spacer(Modifier.height(10.dp))
 
-                            // RESTO DE INFORMACIÓN
                             Text("PACIENTE", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                             Text(pacienteTexto, fontSize = 14.sp)
 

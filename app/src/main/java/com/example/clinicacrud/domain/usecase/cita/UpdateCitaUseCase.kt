@@ -1,4 +1,3 @@
-// domain/usecase/cita/UpdateCitaUseCase.kt
 package com.example.clinicacrud.domain.usecase.cita
 import com.example.clinicacrud.domain.model.Cita
 import com.example.clinicacrud.domain.repository.CitaRepository

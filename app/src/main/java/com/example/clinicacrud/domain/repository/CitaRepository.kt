@@ -1,4 +1,3 @@
-// domain/repository/CitaRepository.kt
 package com.example.clinicacrud.domain.repository
 
 import com.example.clinicacrud.domain.model.Cita

@@ -17,7 +17,6 @@ class CitaViewModel(
         private set
     var filtroPaciente by mutableStateOf("")
 
-    // Estado para guardar el paciente que se encontró en la búsqueda por DNI
     var busquedaPaciente by mutableStateOf<Paciente?>(null)
         private set
 

@@ -62,7 +62,6 @@ fun ClinicaCrudTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            // Hace que la barra de estado superior combine elegantemente con el fondo de la app
             window.statusBarColor = colorScheme.background.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
