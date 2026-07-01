@@ -1,4 +1,3 @@
-// domain/usecase/paciente/AddPacienteUseCase.kt
 package com.example.clinicacrud.domain.usecase.paciente
 import com.example.clinicacrud.domain.model.Paciente
 import com.example.clinicacrud.domain.repository.PacienteRepository

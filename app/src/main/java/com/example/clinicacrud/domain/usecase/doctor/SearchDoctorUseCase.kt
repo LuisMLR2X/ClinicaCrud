@@ -1,4 +1,3 @@
-// domain/usecase/doctor/SearchDoctorUseCase.kt
 package com.example.clinicacrud.domain.usecase.doctor
 import com.example.clinicacrud.domain.repository.DoctorRepository
 class SearchDoctorUseCase(private val repo: DoctorRepository) {

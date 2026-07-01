@@ -1,4 +1,3 @@
-// presentation/doctor/DoctorViewModel.kt
 package com.example.clinicacrud.presentation.doctor
 
 import androidx.compose.runtime.getValue

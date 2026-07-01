@@ -1,4 +1,3 @@
-// domain/usecase/doctor/DeleteDoctorUseCase.kt
 package com.example.clinicacrud.domain.usecase.doctor
 import com.example.clinicacrud.domain.model.Doctor
 import com.example.clinicacrud.domain.repository.DoctorRepository
